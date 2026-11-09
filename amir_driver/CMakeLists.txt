@@ -63,6 +63,7 @@ install(
     scripts/realsense_frame_cache.py
     scripts/temporal_pointcloud_filter.py
     scripts/rviz_ee_target.py
+    scripts/mr_ee_target.py
     scripts/wait_for_realsense.py
   DESTINATION lib/${PROJECT_NAME}
 )
