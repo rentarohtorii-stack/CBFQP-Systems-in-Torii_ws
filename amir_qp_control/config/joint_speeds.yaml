@@ -1,0 +1,6 @@
+/**:
+  ros__parameters:
+    # Preferred speed magnitudes and individual caps, in rad/s. No signs needed.
+    # Order: Joint_1, Joint_2, Joint_3, Joint_4. Joint_5 remains held at zero speed.
+    # ROS requires one numeric type throughout the array: write 2.0, not 2.
+    joint_speeds: [0.2, 0.2, 0.2, 0.2]

@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <world name="obstacle_demo">
+    <physics name="1ms" type="ignored"><max_step_size>0.001</max_step_size><real_time_factor>1.0</real_time_factor></physics>
+    <plugin filename="ignition-gazebo-physics-system" name="ignition::gazebo::systems::Physics"/>
+    <plugin filename="ignition-gazebo-user-commands-system" name="ignition::gazebo::systems::UserCommands"/>
+    <plugin filename="ignition-gazebo-scene-broadcaster-system" name="ignition::gazebo::systems::SceneBroadcaster"/>
+    <light name="sun" type="directional"><pose>0 0 10 0 0 0</pose><diffuse>0.8 0.8 0.8 1</diffuse><specular>0.2 0.2 0.2 1</specular><direction>-0.5 0.1 -0.9</direction></light>
+    <model name="ground_plane"><static>true</static><link name="link"><collision name="collision"><geometry><plane><normal>0 0 1</normal><size>10 10</size></plane></geometry></collision><visual name="visual"><geometry><plane><normal>0 0 1</normal><size>10 10</size></plane></geometry><material><ambient>0.65 0.65 0.65 1</ambient><diffuse>0.65 0.65 0.65 1</diffuse></material></visual></link></model>
+    <!-- Pose order: x y z roll pitch yaw. z is half the box height. -->
+    <include><uri>model://obstacle_box_1</uri><name>obstacle_box_1</name><pose>0.40 -0.4 0.08 0 0 0.20</pose></include>
+    <include><uri>model://obstacle_box_2</uri><name>obstacle_box_2</name><pose>0.55 0.05 0.175 0 0 0</pose></include>
+    <include><uri>model://obstacle_box_3</uri><name>obstacle_box_3</name><pose>0.35 0.18 0.06 0 0 -0.4</pose></include>
+    <include><uri>model://obstacle_box_4</uri><name>obstacle_box_4</name><pose>0.15 0.50 0.12 0 0 0.30</pose></include>
+    <include><uri>model://pet_bottle</uri><name>pet_bottle</name><pose>0.48 0.05 0 0 0 0</pose></include>
+  </world>
+</sdf>

@@ -1,0 +1,5 @@
+<library path="amir_cbf_rviz">
+  <class name="amir_cbf_rviz/ForegroundMarkerArray" type="amir_cbf_rviz::ForegroundMarkerArray" base_class_type="rviz_common::Display">
+    <description>CBF markers composited in front of scene geometry, preserving marker alpha.</description>
+  </class>
+</library>

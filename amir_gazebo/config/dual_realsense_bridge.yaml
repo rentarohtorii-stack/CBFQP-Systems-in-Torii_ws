@@ -1,0 +1,55 @@
+- ros_topic_name: /amir_camera/image
+  gz_topic_name: /amir_camera/image
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+
+- ros_topic_name: /amir_camera/depth_image
+  gz_topic_name: /amir_camera/depth_image
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+
+- ros_topic_name: /amir_camera/camera_info
+  gz_topic_name: /amir_camera/camera_info
+  ros_type_name: sensor_msgs/msg/CameraInfo
+  gz_type_name: gz.msgs.CameraInfo
+  direction: GZ_TO_ROS
+
+- ros_topic_name: /amir_camera/points
+  gz_topic_name: /amir_camera/points
+  ros_type_name: sensor_msgs/msg/PointCloud2
+  gz_type_name: gz.msgs.PointCloudPacked
+  direction: GZ_TO_ROS
+  subscriber_queue: 1
+  publisher_queue: 1
+
+- ros_topic_name: /tripod_camera/image
+  gz_topic_name: /tripod_camera/image
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+  lazy: true
+
+- ros_topic_name: /tripod_camera/depth_image
+  gz_topic_name: /tripod_camera/depth_image
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+  lazy: true
+
+- ros_topic_name: /tripod_camera/camera_info
+  gz_topic_name: /tripod_camera/camera_info
+  ros_type_name: sensor_msgs/msg/CameraInfo
+  gz_type_name: gz.msgs.CameraInfo
+  direction: GZ_TO_ROS
+  lazy: true
+
+- ros_topic_name: /tripod_camera/points
+  gz_topic_name: /tripod_camera/points
+  ros_type_name: sensor_msgs/msg/PointCloud2
+  gz_type_name: gz.msgs.PointCloudPacked
+  direction: GZ_TO_ROS
+  lazy: true
+  subscriber_queue: 1
+  publisher_queue: 1

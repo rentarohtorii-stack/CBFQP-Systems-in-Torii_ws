@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="obstacle_box_2"><static>true</static><link name="box_link">
+    <collision name="collision"><geometry><box><size>0.22 0.22 0.35</size></box></geometry></collision>
+    <visual name="visual"><geometry><box><size>0.22 0.22 0.35</size></box></geometry><material><ambient>0.55 0.18 0.03 1</ambient><diffuse>0.95 0.34 0.06 1</diffuse><specular>0.15 0.15 0.15 1</specular></material></visual>
+  </link></model>
+</sdf>

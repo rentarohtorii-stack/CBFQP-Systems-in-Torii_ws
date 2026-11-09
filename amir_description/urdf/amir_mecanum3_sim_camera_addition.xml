@@ -1,0 +1,10 @@
+<!-- amir_mecanum3_sim.xacro の </robot> の直前へ追加 -->
+<xacro:include filename="$(find amir_description)/urdf/sensors/realsense_d435_sim.xacro"/>
+
+<!-- AMIR車体上の前方カメラ。base_link基準で位置・角度を調整可能。 -->
+<xacro:realsense_d435_sim
+    name="amir_camera"
+    parent="base_link"
+    topic="/amir_camera"
+    xyz="0.22 0 0.34"
+    rpy="0 0 0"/>

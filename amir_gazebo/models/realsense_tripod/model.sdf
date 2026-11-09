@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="realsense_tripod">
+    <static>true</static>
+    <link name="tripod_link">
+      <visual name="pole_visual"><pose>0 0 0.65 0 0 0</pose><geometry><cylinder><radius>0.018</radius><length>1.30</length></cylinder></geometry><material><ambient>0.12 0.12 0.13 1</ambient><diffuse>0.18 0.18 0.20 1</diffuse></material></visual>
+      <collision name="pole_collision"><pose>0 0 0.65 0 0 0</pose><geometry><cylinder><radius>0.018</radius><length>1.30</length></cylinder></geometry></collision>
+      <visual name="leg_1"><pose>0.20 0 0.20 0 0.48 0</pose><geometry><cylinder><radius>0.012</radius><length>0.48</length></cylinder></geometry><material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.15 0.15 0.15 1</diffuse></material></visual>
+      <visual name="leg_2"><pose>-0.10 0.173 0.20 -0.42 -0.24 0</pose><geometry><cylinder><radius>0.012</radius><length>0.48</length></cylinder></geometry><material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.15 0.15 0.15 1</diffuse></material></visual>
+      <visual name="leg_3"><pose>-0.10 -0.173 0.20 0.42 -0.24 0</pose><geometry><cylinder><radius>0.012</radius><length>0.48</length></cylinder></geometry><material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.15 0.15 0.15 1</diffuse></material></visual>
+      <!-- Camera optical axis points along model +x. -->
+      <visual name="camera_visual"><pose>0 0 1.31 0 0 0</pose><geometry><box><size>0.025 0.090 0.025</size></box></geometry><material><ambient>0.05 0.05 0.06 1</ambient><diffuse>0.08 0.08 0.10 1</diffuse></material></visual>
+      <collision name="camera_collision"><pose>0 0 1.31 0 0 0</pose><geometry><box><size>0.025 0.090 0.025</size></box></geometry></collision>
+      <sensor name="tripod_camera" type="rgbd_camera">
+        <pose>0.015 0 1.31 0 0 0</pose>
+        <topic>/tripod_camera</topic>
+        <update_rate>10</update_rate>
+        <always_on>true</always_on>
+        <visualize>true</visualize>
+        <camera>
+          <horizontal_fov>1.211</horizontal_fov>
+          <image><width>320</width><height>240</height><format>R8G8B8</format></image>
+          <clip><near>0.10</near><far>10.0</far></clip>
+          <depth_camera><clip><near>0.10</near><far>5.0</far></clip></depth_camera>
+          <noise><type>gaussian</type><mean>0.0</mean><stddev>0.002</stddev></noise>
+        </camera>
+      </sensor>
+    </link>
+  </model>
+</sdf>

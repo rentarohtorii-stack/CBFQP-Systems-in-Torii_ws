@@ -1,0 +1,85 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/InteractiveMarkers
+      Name: EE Target
+      Enabled: true
+      Interactive Markers Namespace: /ee_target_marker
+      Show Axes: true
+      Show Descriptions: true
+      Show Visual Aids: true
+      Enable Transparency: true
+      Value: true
+    - Class: rviz_default_plugins/RobotModel
+      Name: AMIR
+      Enabled: true
+      Description Source: Topic
+      Description Topic:
+        Value: /robot_description
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        History Policy: Keep Last
+        Depth: 1
+      Visual Enabled: true
+      Collision Enabled: false
+      Value: true
+    - Class: amir_cbf_rviz/ForegroundMarkerArray
+      Name: Frozen CBF OctoMap
+      Enabled: true
+      Topic:
+        Value: /cbf/frozen_obstacle_spheres
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        History Policy: Keep Last
+        Depth: 1
+      Value: true
+    - Class: amir_cbf_rviz/ForegroundMarkerArray
+      Name: Arm CBF Spheres
+      Enabled: true
+      Topic:
+        Value: /cbf/arm_spheres
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        History Policy: Keep Last
+        Depth: 1
+      Value: true
+    - Class: amir_cbf_rviz/ForegroundMarkerArray
+      Name: Active Constraints
+      Enabled: true
+      Topic:
+        Value: /cbf/active_constraints
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        History Policy: Keep Last
+        Depth: 1
+      Value: true
+  Enabled: true
+  Global Options:
+    Fixed Frame: link0_1
+    Background Color: 48; 48; 48
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/Interact
+      Hide Inactive Objects: true
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/PublishPoint
+      Single click: true
+      Topic:
+        Value: /clicked_point
+        Durability Policy: Volatile
+        Reliability Policy: Reliable
+        History Policy: Keep Last
+        Depth: 5
+  Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 2
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0.3

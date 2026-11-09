@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<sdf version="1.8">
+  <model name="ee_target">
+
+    <!-- 重力で落下させず、GUIから位置だけ変更する -->
+    <static>true</static>
+
+    <link name="target_link">
+
+      <visual name="target_visual">
+        <geometry>
+          <sphere>
+            <radius>0.035</radius>
+          </sphere>
+        </geometry>
+
+        <material>
+          <ambient>1.0 0.0 0.0 1.0</ambient>
+          <diffuse>1.0 0.0 0.0 1.0</diffuse>
+          <specular>0.3 0.3 0.3 1.0</specular>
+        </material>
+      </visual>
+
+      <!--
+      ターゲットは目標位置を表すだけなので、
+      ロボットと衝突させないためcollisionは定義しない。
+      -->
+
+    </link>
+  </model>
+</sdf>

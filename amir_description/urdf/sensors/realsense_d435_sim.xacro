@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Simple Gazebo Sim RGB-D camera mounted directly on the robot. -->
+  <xacro:macro name="realsense_d435_sim"
+               params="name parent topic xyz:='0 0 0' rpy:='0 0 0'">
+    <joint name="${name}_joint" type="fixed">
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+      <parent link="${parent}"/>
+      <child link="${name}_link"/>
+    </joint>
+
+    <link name="${name}_link">
+      <visual>
+        <geometry>
+          <box size="0.025 0.090 0.025"/>
+        </geometry>
+        <material name="${name}_dark_gray">
+          <color rgba="0.12 0.12 0.12 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.025 0.090 0.025"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="0.072"/>
+        <inertia ixx="4.91e-5" ixy="0" ixz="0"
+                 iyy="7.50e-6" iyz="0" izz="4.91e-5"/>
+      </inertial>
+    </link>
+
+    <gazebo reference="${name}_link">
+      <sensor name="${name}" type="rgbd_camera">
+        <camera>
+          <horizontal_fov>1.57</horizontal_fov>
+          <image>
+            <!--
+              PointCloudPacked uses 24 bytes per pixel in Gazebo Fortress.
+              440x330 therefore produces a ~3.5 MB DDS sample, which can
+              saturate ros_gz_bridge before ROS subscribers receive it.
+            -->
+            <width>440</width>
+            <height>330</height>
+            <format>RGB_INT8</format>
+          </image>
+          <clip>
+            <near>0.1</near>
+            <far>10.0</far>
+          </clip>
+          <depth_camera>
+            <clip>
+              <near>0.3</near>
+              <far>3.0</far>
+            </clip>
+          </depth_camera>
+        </camera>
+        <always_on>true</always_on>
+        <update_rate>10</update_rate>
+        <visualize>true</visualize>
+        <topic>${topic}</topic>
+        <ignition_frame_id>${name}_link</ignition_frame_id>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+
+</robot>
