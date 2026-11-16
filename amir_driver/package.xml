@@ -41,6 +41,7 @@
   <exec_depend>sensor_msgs_py</exec_depend>
   <exec_depend>python3-numpy</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>tf2_geometry_msgs</exec_depend>
   <depend>std_msgs</depend>
   <exec_depend>visualization_msgs</exec_depend>
   <exec_depend>interactive_markers</exec_depend>

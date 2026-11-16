@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""MR development copy of rviz_ee_target.py; currently uses RViz manual input.
-
-Add MR reception and coordinate conversion here, then update the marker pose
-with server.setPose()/applyChanges() and publish the same target to QP.
-No MR subscription or coordinate conversion is implemented in this copy yet."""
+"""Receive ROS-FLU MR hand positions, update the RViz marker and publish QP targets."""
 
 import math
 import time
@@ -12,6 +8,10 @@ import rclpy
 from geometry_msgs.msg import PointStamped, PoseStamped
 from interactive_markers.interactive_marker_server import InteractiveMarkerServer
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
+from rclpy.time import Time
+from tf2_ros import Buffer, TransformListener, TransformException
+from tf2_geometry_msgs import do_transform_point
 from visualization_msgs.msg import (
     InteractiveMarker,
     InteractiveMarkerControl,
@@ -27,6 +27,8 @@ class MrEeTarget(Node):
         super().__init__("mr_ee_target")
 
         self.declare_parameter("frame_id", "base_link")
+        self.declare_parameter("mr_input_topic", "/palm_pose")
+        self.declare_parameter("manual_input_enabled", False)
         self.declare_parameter("target_topic", "/ee_target_pose")
         self.declare_parameter("clicked_point_topic", "/mr/clicked_point")
         self.declare_parameter("interactive_marker_namespace", "mr_ee_target_marker")
@@ -64,6 +66,15 @@ class MrEeTarget(Node):
         if not marker_namespace:
             raise ValueError("interactive_marker_namespace must not be empty")
 
+        self.manual_input_enabled = bool(self.get_parameter("manual_input_enabled").value)
+        mr_topic = str(self.get_parameter("mr_input_topic").value)
+        if mr_topic == target_topic:
+            raise ValueError("MR input and target output topics must differ")
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+        self.mr_subscription = self.create_subscription(
+            PoseStamped, mr_topic, self.mr_pose_callback, qos_profile_sensor_data)
+
         self.target_publisher = self.create_publisher(PoseStamped, target_topic, 10)
         self.clicked_point_subscription = self.create_subscription(
             PointStamped,
@@ -80,16 +91,43 @@ class MrEeTarget(Node):
         )
         self.server.applyChanges()
 
-        publish_mode = (
-            f"streamed while dragging at up to {drag_update_rate:g} Hz"
-            if self.publish_while_dragging
-            else "published when the drag finishes"
-        )
         self.get_logger().info(
-            "MR development EE target ready (RViz manual input only). Use the Interact tool to move the red marker; "
-            f"the target is {publish_mode}. "
-            f"Fallback: Publish Point on {clicked_point_topic}."
+            f"MR EE target ready: {mr_topic} -> {target_topic}, frame={self.frame_id}. "
+            f"RViz manual input enabled={self.manual_input_enabled}."
         )
+
+    def mr_pose_callback(self, message):
+        # Unity already converted to ROS FLU/metres. Never swap axes here.
+        source = message.header.frame_id.strip("/")
+        position = message.pose.position
+        if not source or not all(math.isfinite(v) for v in
+                                 (position.x, position.y, position.z)):
+            self.get_logger().warning("Rejected MR target: empty frame or non-finite position",
+                                      throttle_duration_sec=2.0)
+            return
+        point = PointStamped()
+        point.header.frame_id = source
+        point.point = position
+        if source != self.frame_id:
+            try:
+                # MR wall-clock stamps and Gazebo simulation time differ.
+                # Calibration is static; use latest TF, stamp output with ROS time.
+                transform = self.tf_buffer.lookup_transform(self.frame_id, source, Time())
+                point = do_transform_point(point, transform)
+            except TransformException as error:
+                self.get_logger().warning(f"MR target waiting for TF: {error}",
+                                          throttle_duration_sec=2.0)
+                return
+        if not all(math.isfinite(v) for v in
+                   (point.point.x, point.point.y, point.point.z)):
+            return
+        # Position-only tracking: preserve the existing identity orientation.
+        target = PoseStamped()
+        target.pose.position = point.point
+        target.pose.orientation.w = 1.0
+        self.server.setPose("ee_target", target.pose)
+        self.server.applyChanges()
+        self.publish_target(self.frame_id, point.point, log_result=False)
 
     def make_interactive_marker(self, scale):
         marker = InteractiveMarker()
@@ -120,9 +158,10 @@ class MrEeTarget(Node):
         visual_control.markers.append(visual)
         marker.controls.append(visual_control)
 
-        self.add_axis_control(marker, "move_x", 1.0, 1.0, 0.0, 0.0)
-        self.add_axis_control(marker, "move_y", 1.0, 0.0, 0.0, 1.0)
-        self.add_axis_control(marker, "move_z", 1.0, 0.0, 1.0, 0.0)
+        if self.manual_input_enabled:
+            self.add_axis_control(marker, "move_x", 1.0, 1.0, 0.0, 0.0)
+            self.add_axis_control(marker, "move_y", 1.0, 0.0, 0.0, 1.0)
+            self.add_axis_control(marker, "move_z", 1.0, 0.0, 1.0, 0.0)
         return marker
 
     @staticmethod
@@ -139,6 +178,8 @@ class MrEeTarget(Node):
         marker.controls.append(control)
 
     def feedback_callback(self, feedback):
+        if not self.manual_input_enabled:
+            return
         if (
             self.publish_while_dragging
             and feedback.event_type == InteractiveMarkerFeedback.POSE_UPDATE
@@ -166,7 +207,8 @@ class MrEeTarget(Node):
         )
 
     def clicked_point_callback(self, message):
-        self.publish_target(message.header.frame_id, message.point)
+        if self.manual_input_enabled:
+            self.publish_target(message.header.frame_id, message.point)
 
     def publish_target(self, frame_id, position, log_result=True):
         values = (float(position.x), float(position.y), float(position.z))

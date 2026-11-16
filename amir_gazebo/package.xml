@@ -32,6 +32,7 @@
   <depend>robot_state_publisher</depend>
   <depend>amir_description</depend>
   <exec_depend>amir_driver</exec_depend>
+  <exec_depend>rosbridge_server</exec_depend>
   <depend>mecanumrover_description</depend>
   <depend>mecanumrover3_bringup</depend>
   <exec_depend>octomap_server</exec_depend>

@@ -1,54 +1,76 @@
-# MR 用開発コピー
+# MR hand target -> RViz / Gazebo / QP
 
-既存の RViz 手動操作版を残し、MR 入力の開発用に次のファイルを複製しています。
+## 入力と座標
 
-| 既存版 | MR 開発版 |
-| --- | --- |
-| `launch/amir_cbf_snapshot_qp.launch.py` | `launch/amir_cbf_snapshot_qp_mr.launch.py` |
-| `scripts/rviz_ee_target.py` | `scripts/mr_ee_target.py` |
-| `rviz/amir_cbf_snapshot.rviz` | `rviz/amir_cbf_snapshot_mr.rviz` |
+`Meta-p-main/Assets/Scripts/ROS/handPosePublisher.cs` は MRTK の手関節を
+Origin 基準の位置（m）へ変換し、一度だけ Unity2Ros で ROS FLU に変換します。
+既定は左手 MiddleProximal、30 Hz、`/palm_pose`、frame `Unity` です。
+実際の値は Unity Inspector の設定を使用します。
 
-## 現在の動作
+ROS の `mr_ee_target.py` は PoseStamped を受信し、最新 TF で表示フレームへ変換します。
+MR の時刻と Gazebo のシミュレーション時刻は異なるため、入力時刻は TF 検索に使わず、
+出力に ROS 時刻を付けます。MR Origin は静的に校正する前提です。
+空フレーム、NaN/Inf、TF 不足の目標は捨てます。
+赤い Interactive Marker と出力目標は同じ変換済み位置です。姿勢は制御しません。
 
-MR 受信はまだ未実装です。MR 開発版も、現時点では RViz の赤い球をドラッグして
-目標を送る既存版と同じ操作で動きます。初期位置は表示のみで、起動だけでは目標を送りません。
-マーカーの namespace は `/mr_ee_target_marker`、Publish Point は `/mr/clicked_point`
-に分けています。QP への出力は従来と同じ `/ee_target_pose` (`geometry_msgs/msg/PoseStamped`) です。
-`use_rviz_target` など既存の launch 引数も利用できます。
+経路:
+`Unity -> rosbridge -> /palm_pose -> mr_ee_target.py -> /ee_target_pose_command
+-> target_pose_publisher.py -> /ee_target_pose -> QP`
+`target_pose_publisher.py` は Gazebo の赤球も同時に動かします。
+MR モードでは RViz のドラッグと Publish Point を無効にし、入力の競合を避けます。
+手を見失うと Unity は送信を止め、Gazebo 側は最後の目標を保持します。
+自動で現在 EE 位置に停止する処理は追加していません。
 
-QP 本体、速度設定、bringup、CBF スナップショット処理は共通です。
-同じ実機を操作する既存版と MR 開発版を同時起動しないでください。
-QP やコントローラへの指令先は共通です。
-
-## ビルド・起動
+## 準備
 
 ```bash
+sudo apt-get install ros-humble-rosbridge-server
 cd /home/dars-note-12/Torii_ws
 source /opt/ros/humble/setup.bash
 source install/setup.bash
-colcon build --packages-select amir_driver --symlink-install
+colcon build --packages-select amir_driver amir_gazebo --symlink-install
 source install/setup.bash
 ```
 
-実機 bringup とコントローラ切り替えは `cbf_snapshot_qp.md` の手順と同じです。
-その後、用途に応じてどちらか一方を起動します。
+Unity の main シーンの handPosePublisher で Origin を必ず割り当ててください。
+保存済みシーンにはまだ Origin がありません。未設定ではエラーを出し送信しません。
+Origin の +Z は前、+X は右、+Y は上。Transform の見た目の拡大縮小は距離に掛けません。
+Topic=`/palm_pose`、FrameId=`Unity` にし、RosConnector を同じ GameObject に付けます。
+RosConnector の接続先は `ws://<ROS PC の IP>:9090`、ROS 2 対応設定にします。
+PC と MR 端末のネットワークで TCP 9090 が通る必要があります。
+
+## 起動
 
 ```bash
-# 既存の RViz 手動操作版
-ros2 launch amir_driver amir_cbf_snapshot_qp.launch.py
-
-# MR 開発版（現在は RViz 手動操作）
-ros2 launch amir_driver amir_cbf_snapshot_qp_mr.launch.py
+# bringup2 は既定で MR モード
+ros2 launch amir_gazebo gazebo_bringup2.launch.py
+# 通常の bringup は従来の RViz モードが既定。MR を明示しても起動可能
+ros2 launch amir_gazebo gazebo_bringup.launch.py target_source:=mr
+# bringup2 で従来の RViz 手動操作へ戻す
+ros2 launch amir_gazebo gazebo_bringup2.launch.py target_source:=rviz
 ```
 
-## 今後の編集箇所
+上記は同時起動しないでください。Gazebo が起動したら Unity/MR アプリを実行します。
+rosbridge も launch 内で ROS_DOMAIN_ID=50 で起動します。
+別起動の rosbridge を使う場合は `start_rosbridge:=false` とし、そのプロセスも
+`ROS_DOMAIN_ID=50` にします。
 
-- `mr_ee_target.py`: MR 目標の購読、MR 座標系から `frame_id` への変換を追加します。
-  同じ変換済み目標を `server.setPose("ee_target", pose)` と `server.applyChanges()`
-  で赤い球へ反映し、`publish_target()` から QP に送る想定です。
-  MR のメッセージ型・トピック・軸・単位・原点の仕様は未確定です。
-- `amir_cbf_snapshot_qp_mr.launch.py`: MR 接続用ノードや入力パラメータを追加します。
-- `amir_cbf_snapshot_mr.rviz`: MR 用表示を変更します。
+既定の校正 TF は `world -> Unity` の位置・回転ゼロです。つまり MR Origin と Gazebo
+world の原点・方向を一致させる必要があります。異なる場合は ROS FLU で
+`mr_origin_x/y/z` (m)、`mr_origin_roll/pitch/yaw` (rad) を指定してください。
+`mr_frame` は Unity の FrameId に合わせます。動的な追跡基準の TF には未対応です。
 
-MR 操作と RViz 手動操作を MR 版の中で併用する場合は、目標入力の優先順位も決めてください。
-既存版のファイルを編集する必要はありません。
+```bash
+ROS_DOMAIN_ID=50 ros2 topic echo /palm_pose
+ROS_DOMAIN_ID=50 ros2 topic echo /ee_target_pose_command
+```
+
+赤球の初期位置への移動や CBF 初期化は従来の Gazebo QP の動作を引き継ぎます。
+Gazebo 自体の動作、MR 端末からの通信、原点校正は実環境で確認してください。
+
+## 実機のスナップショット MR launch
+
+`amir_cbf_snapshot_qp_mr.launch.py` も同じ受信ノードを使用しますが、
+rosbridge と MR Origin の校正 TF は自動起動しません。
+その環境に合わせて別途用意してください。元の `rviz_ee_target.py` と
+`amir_cbf_snapshot_qp.launch.py` は変更していません。

@@ -8,14 +8,53 @@ from launch.actions import (
     TimerAction,
 )
 from launch.launch_description_sources import (
+    AnyLaunchDescriptionSource,
     PythonLaunchDescriptionSource,
 )
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression
+from launch.conditions import IfCondition
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
+
+    mr_condition = IfCondition(PythonExpression(["'", LaunchConfiguration("target_source"), "' == 'mr'"]))
+    rviz_condition = IfCondition(PythonExpression(["'", LaunchConfiguration("target_source"), "' == 'rviz'"]))
+    mr_arguments = [
+        DeclareLaunchArgument("target_source", default_value="mr", choices=["rviz", "mr"]),
+        DeclareLaunchArgument("mr_input_topic", default_value="/palm_pose"),
+        DeclareLaunchArgument("mr_frame", default_value="Unity"),
+        DeclareLaunchArgument("start_rosbridge", default_value="true"),
+        DeclareLaunchArgument("rosbridge_port", default_value="9090"),
+    ]
+    # ROS-FLU calibration of Unity Origin in Gazebo world (metres/radians).
+    for axis in ("x", "y", "z", "roll", "pitch", "yaw"):
+        mr_arguments.append(DeclareLaunchArgument("mr_origin_" + axis, default_value="0.0"))
+    mr_target = Node(
+        package="amir_driver", executable="mr_ee_target.py", name="gazebo_mr_ee_target",
+        condition=mr_condition, output="screen",
+        parameters=[{"use_sim_time": True, "frame_id": "world",
+                     "mr_input_topic": LaunchConfiguration("mr_input_topic"),
+                     "target_topic": "/ee_target_pose_command",
+                     "interactive_marker_namespace": "ee_target_marker",
+                     "manual_input_enabled": False,
+                     "initial_x": 0.2, "initial_y": 0.0, "initial_z": 0.65,
+                     "marker_scale": 0.16}])
+    mr_calibration = Node(
+        package="tf2_ros", executable="static_transform_publisher", name="mr_origin_tf",
+        condition=mr_condition,
+        arguments=["--frame-id", "world", "--child-frame-id", LaunchConfiguration("mr_frame")]
+                  + [item for axis in ("x", "y", "z", "roll", "pitch", "yaw")
+                     for item in ("--" + axis, LaunchConfiguration("mr_origin_" + axis))],
+        parameters=[{"use_sim_time": True}])
+    rosbridge = IncludeLaunchDescription(
+        AnyLaunchDescriptionSource(PathJoinSubstitution([
+            FindPackageShare("rosbridge_server"), "launch", "rosbridge_websocket_launch.xml"])),
+        condition=IfCondition(PythonExpression([
+            "'", LaunchConfiguration("target_source"), "' == 'mr' and '",
+            LaunchConfiguration("start_rosbridge"), "'.lower() == 'true'"])),
+        launch_arguments={"port": LaunchConfiguration("rosbridge_port")}.items())
 
     # amir_gazeboパッケージのshareディレクトリ
     amir_gazebo_share = FindPackageShare("amir_gazebo")
@@ -255,6 +294,7 @@ def generate_launch_description():
         package="amir_driver",
         executable="rviz_ee_target.py",
         name="gazebo_rviz_ee_target",
+        condition=rviz_condition,
         output="screen",
         parameters=[
             {
@@ -529,6 +569,10 @@ Gazeboの /clock を使用します。
         [
             # Gazebo側の全ノードを専用ROSドメインで起動する。
             SetEnvironmentVariable("ROS_DOMAIN_ID", "50"),
+            *mr_arguments,
+            mr_target,
+            mr_calibration,
+            rosbridge,
             yolo_model_argument,
             robot_bringup,
             spawn_ee_target,
